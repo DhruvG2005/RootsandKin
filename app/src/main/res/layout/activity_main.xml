@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".MainActivity"
+    android:background="#F5EADD">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <Button
+            android:id="@+id/Back"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:backgroundTint="#000000"
+            android:text="Back" />
+
+        <TextView
+            android:id="@+id/Title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/Title"
+            android:textStyle="italic"
+            android:textSize="24sp"
+            android:layout_centerHorizontal="true" />
+
+        <Space
+            android:id="@+id/Space1"
+            android:layout_width="match_parent"
+            android:layout_height="50sp"
+            android:layout_below="@+id/Title"/>
+
+        <LinearLayout
+            android:id="@+id/FirstNameLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_below="@+id/Space1">
+
+            <TextView
+                android:id="@+id/FirstNameTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:text="Enter Your First Name:"
+                android:textSize="20sp" />
+            <Space
+                android:layout_width="10sp"
+                android:layout_height="0dp"
+                android:layout_marginTop="54dp" />
+            <EditText
+                android:id="@+id/FirstNameEditText"
+                android:layout_width="256dp"
+                android:layout_height="48dp"
+                android:hint="First Name" />
+
+        </LinearLayout>
+
+        <Space
+            android:id="@+id/Space2"
+            android:layout_width="match_parent"
+            android:layout_height="50sp"
+            android:layout_below="@+id/FirstNameLayout"/>
+
+        <LinearLayout
+            android:id="@+id/LastNameLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_below="@+id/Space2">
+
+            <TextView
+                android:id="@+id/LastNameTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:text="Enter Your Last Name:"
+                android:textSize="20sp" />
+            <Space
+                android:layout_width="10sp"
+                android:layout_height="0dp"
+                android:layout_marginTop="54dp" />
+            <EditText
+                android:id="@+id/LastNameEditText"
+                android:layout_width="256dp"
+                android:layout_height="48dp"
+                android:hint="Last Name" />
+
+        </LinearLayout>
+
+        <Space
+            android:id="@+id/Space3"
+            android:layout_width="match_parent"
+            android:layout_height="50sp"
+            android:layout_below="@+id/LastNameLayout"/>
+
+        <LinearLayout
+            android:id="@+id/FatherNameLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_below="@+id/Space3">
+
+            <TextView
+                android:id="@+id/FatherNameTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:text="Enter Your Father's Name:"
+                android:textSize="20sp" />
+            <Space
+                android:layout_width="10sp"
+                android:layout_height="0dp"
+                android:layout_marginTop="54dp" />
+            <EditText
+                android:id="@+id/FatherNameEditText"
+                android:layout_width="256dp"
+                android:layout_height="48dp"
+                android:hint="Father Name" />
+
+        </LinearLayout>
+
+        <Space
+            android:id="@+id/Space4"
+            android:layout_width="match_parent"
+            android:layout_height="50sp"
+            android:layout_below="@+id/FatherNameLayout"/>
+
+        <LinearLayout
+            android:id="@+id/MotherNameLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_below="@+id/Space4">
+
+            <TextView
+                android:id="@+id/MotherNameTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="48dp"
+                android:text="Enter Your Mother's Name:"
+                android:textSize="20sp" />
+            <Space
+                android:layout_width="10sp"
+                android:layout_height="0dp"
+                android:layout_marginTop="54dp" />
+            <EditText
+                android:id="@+id/MotherNameEditText"
+                android:layout_width="256dp"
+                android:layout_height="48dp"
+                android:hint="Mother Name" />
+
+        </LinearLayout>
+
+        <Space
+            android:id="@+id/Space5"
+            android:layout_width="match_parent"
+            android:layout_height="30sp"
+            android:layout_below="@+id/MotherNameLayout"/>
+
+        <LinearLayout
+            android:id="@+id/SiblingLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_below="@+id/Space5">
+
+            <CheckBox
+                android:id="@+id/SiblingCheckbox"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="Do you have a sibling?"
+                android:textSize="24sp"
+                android:layout_marginStart="45dp"/>
+
+            <LinearLayout
+                android:id="@+id/SiblingLayout1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="20dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="How many?"
+                    android:textSize="20sp"/>
+
+                <Spinner
+                    android:id="@+id/SiblingSpinner"
+                    android:layout_width="match_parent"
+                    android:layout_marginStart="50dp"
+                    android:layout_height="60dp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/SiblingInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/SiblingNameTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:text="Enter Name:"
+                    android:textSize="20sp" />
+                <Space
+                    android:layout_width="10sp"
+                    android:layout_height="0dp"
+                    android:layout_marginTop="54dp" />
+                <EditText
+                    android:id="@+id/SiblingNameEditText"
+                    android:layout_width="256dp"
+                    android:layout_height="48dp"
+                    android:hint="Sibling Name" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <Space
+            android:id="@+id/Space6"
+            android:layout_width="match_parent"
+            android:layout_height="50sp"
+            android:layout_below="@+id/SiblingLayout"/>
+
+        <LinearLayout
+            android:id="@+id/GenderLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_below="@+id/Space6">
+
+            <TextView
+                android:layout_width="194dp"
+                android:layout_height="60dp"
+                android:text="Select Your Gender"
+                android:textSize="20sp" />
+
+            <Space
+                android:layout_width="10sp"
+                android:layout_height="0dp"
+                android:layout_marginTop="10dp" />
+
+            <Spinner
+                android:id="@+id/GenderSpinner"
+                android:layout_width="match_parent"
+                android:layout_height="60dp" />
+
+        </LinearLayout>
+
+        <Space
+            android:id="@+id/Space7"
+            android:layout_width="match_parent"
+            android:layout_height="40sp"
+            android:layout_below="@+id/GenderLayout"/>
+
+        <LinearLayout
+            android:id="@+id/BloodGroupLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_below="@+id/Space7">
+
+            <TextView
+                android:layout_width="194dp"
+                android:layout_height="60dp"
+                android:text="Blood Group:"
+                android:textSize="20sp" />
+            <Space
+                android:layout_width="10sp"
+                android:layout_height="0dp"
+                android:layout_marginTop="10dp" />
+
+            <Spinner
+                android:id="@+id/BloodGroupSpinner"
+                android:layout_width="match_parent"
+                android:layout_height="60dp" />
+
+        </LinearLayout>
+
+        <Space
+            android:id="@+id/Space8"
+            android:layout_width="match_parent"
+            android:layout_height="40sp"
+            android:layout_below="@+id/BloodGroupLayout"/>
+
+        <LinearLayout
+            android:id="@+id/BdateLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_below="@+id/Space8">
+
+            <TextView
+                android:layout_width="194dp"
+                android:layout_height="60dp"
+                android:text="Enter Your Birth Date:"
+                android:textSize="20sp" />
+            <Space
+                android:layout_width="10sp"
+                android:layout_height="0dp"
+                android:layout_marginTop="10dp" />
+
+            <EditText
+                android:id="@+id/BdateEditText"
+                android:layout_width="256dp"
+                android:layout_height="48dp"
+                android:hint="Birth Date (dd/MM/yyyy)" />
+
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/Submit"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/BdateLayout"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="100dp"
+            android:backgroundTint="#0000FF"
+            android:text="Submit" />
+
+    </RelativeLayout>
+</ScrollView>
