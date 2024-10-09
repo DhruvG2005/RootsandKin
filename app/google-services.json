@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "544491258431",
+    "project_id": "rootsandkin-57dd6",
+    "storage_bucket": "rootsandkin-57dd6.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:544491258431:android:5b03e963737164511c6e8a",
+        "android_client_info": {
+          "package_name": "com.example.rootskin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBC2R7JvXatoYVbRxN3G3fj_TmkKeLFf7g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

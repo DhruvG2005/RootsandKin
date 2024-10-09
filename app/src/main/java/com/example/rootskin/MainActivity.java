@@ -1,10 +1,15 @@
 package com.example.rootskin;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.annotation.SuppressLint;
+import android.content.Intent;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -13,21 +18,45 @@ import android.widget.LinearLayout;
 import android.widget.CheckBox;
 import androidx.appcompat.app.AlertDialog;
 import android.widget.Space;
-
+import android.content.SharedPreferences;
 import android.os.Bundle;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+
+import java.util.Locale;
+
+import com.google.firebase.firestore.FirebaseFirestore;
+import java.util.HashMap;
+import java.util.Map;
+
+import android.app.DatePickerDialog;
+import android.widget.DatePicker;
+import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
 
-    private Button backButton, submitButton;
-    private Spinner GenderSpinner, SiblingSpinner, BloodGroupSpinner;
-    private EditText BdateEditText, FirstNameEditText, LastNameEditText, FatherNameEditText, MotherNameEditText, SiblingNameEditText;
+    private ImageButton backButton;
+    private Button submitButton, FamHis;
+    private Spinner GenderSpinner, SiblingSpinner, BloodGroupSpinner, MarriageSpinner, RoleSpinner;
+    private EditText BdateEditText, FirstNameEditText, LastNameEditText, FatherNameEditText, MotherNameEditText, SiblingNameEditText, BPlaceEditText, SpouseEditText;
     private CheckBox SiblingCheckbox;
-    private LinearLayout SiblingLayout1, SiblingInfo;
+    private LinearLayout SiblingLayout1, SiblingInfo, MarriageInfo;
     private List<EditText> siblingFirstNameEditTexts = new ArrayList<>();
     private List<EditText> siblingLastNameEditTexts = new ArrayList<>();
+    private int sr = 0;//sr=sibling relationship
+    private FirebaseFirestore db;
+    private String name, spouse;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +77,15 @@ public class MainActivity extends AppCompatActivity {
         SiblingInfo = findViewById(R.id.SiblingInfo);
         SiblingSpinner = findViewById(R.id.SiblingSpinner);
         BloodGroupSpinner = findViewById(R.id.BloodGroupSpinner);
+        BPlaceEditText = findViewById(R.id.BPlaceEditText);
+        FamHis = findViewById(R.id.FamHis);
+        RoleSpinner = findViewById(R.id.RoleSpinner);
+        MarriageSpinner = findViewById(R.id.MarriageSpinner);
+        MarriageInfo = findViewById(R.id.MarriageInfo);
+        SpouseEditText = findViewById(R.id.SpouseNameEditText);
+        // Initialize Firebase Firestore
+        db = FirebaseFirestore.getInstance();
+
 
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this, R.array.gender_array, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -59,11 +97,25 @@ public class MainActivity extends AppCompatActivity {
 
         ArrayAdapter<CharSequence> adapter2 = ArrayAdapter.createFromResource(this, R.array.blood_group_array, android.R.layout.simple_spinner_item);
         adapter2.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-       BloodGroupSpinner.setAdapter(adapter2);
+        BloodGroupSpinner.setAdapter(adapter2);
+
+        ArrayAdapter<CharSequence> adapter3 = ArrayAdapter.createFromResource(this, R.array.marriage_array, android.R.layout.simple_spinner_item);
+        adapter3.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        MarriageSpinner.setAdapter(adapter3);
+
+        ArrayAdapter<CharSequence> adapter4 = ArrayAdapter.createFromResource(this,R.array.role_array, android.R.layout.simple_spinner_item);
+        adapter4.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        RoleSpinner.setAdapter(adapter4);
+
+        // Set up the date picker for birth date...
+        BdateEditText.setOnClickListener(v -> showDatePickerDialog());
 
         // Initially hide the sibling layout
         SiblingLayout1.setVisibility(View.GONE);
         SiblingInfo.setVisibility(View.GONE);
+
+        //Initially hide the marriage info layout
+        MarriageInfo.setVisibility(View.GONE);
 
         SiblingCheckbox.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (isChecked) {
@@ -104,6 +156,38 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // Set an item selected listener for MarriageSpinner
+        MarriageSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
+                String selectedItem = parentView.getItemAtPosition(position).toString();
+
+                if (selectedItem.equals("Married")) {
+                    MarriageInfo.setVisibility(View.VISIBLE); // Show spouse info layout
+
+                    // Determine the spouse based on gender
+                    String gender = GenderSpinner.getSelectedItem().toString().trim();
+                    if (gender.equalsIgnoreCase("Male")) {
+                        spouse = "Wife";
+                    } else if (gender.equalsIgnoreCase("Female")) {
+                        spouse = "Husband";
+                    } else {
+                        spouse = "Null"; // Default if gender is not specified
+                    }
+
+                } else {
+                    MarriageInfo.setVisibility(View.GONE); // Hide spouse info layout
+                    spouse = "Null"; // Reset spouse if single
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parentView) {
+                MarriageInfo.setVisibility(View.GONE);
+                spouse = "Null"; // Reset spouse if nothing is selected
+            }
+        });
+
         backButton.setOnClickListener(v -> {
             showAlertDialog();
         });
@@ -113,24 +197,181 @@ public class MainActivity extends AppCompatActivity {
             if (validateFields()) {
                 // Proceed with submission
                 sendDataToServer();
-                // Uncheck the checkbox after submission
-                SiblingCheckbox.setChecked(false);
-                // Hide sibling-related views
-                SiblingLayout1.setVisibility(View.GONE);
-                SiblingInfo.setVisibility(View.GONE);
-            }
-            else {
+            } else {
                 showAlertDialogError("Please fill in the Required Fields!!");
             }
         });
+
+        FamHis.setOnClickListener(v -> {
+            Intent intent = new Intent(this, FamilyTreeActivity.class);
+            startActivity(intent);
+            finish();
+        });
     }
+
+    private void showDatePickerDialog() {
+        // Get current date
+        final Calendar calendar = Calendar.getInstance();
+        int year = calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH);
+        int day = calendar.get(Calendar.DAY_OF_MONTH);
+
+        // Create and show DatePickerDialog
+        DatePickerDialog datePickerDialog = new DatePickerDialog(
+                this,
+                (view, selectedYear, selectedMonth, selectedDay) -> {
+                    // Format the selected date and set it to the EditText
+                    String selectedDate = String.format(Locale.getDefault(), "%02d/%02d/%d", selectedDay, selectedMonth + 1, selectedYear);
+                    BdateEditText.setText(selectedDate);
+                },
+                year, month, day
+        );
+        datePickerDialog.show();
+    }
+
 
     private void sendDataToServer() {
 
         String first_name = FirstNameEditText.getText().toString().trim();
         String last_name = LastNameEditText.getText().toString().trim();
-        String
-        showAlertDialog1();
+        SharedPreferences prefs = getSharedPreferences("userPrefs", MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString("firstName", first_name);
+        editor.putString("lastName", last_name);
+        editor.apply();
+        name = first_name + last_name;
+        String birth_date = BdateEditText.getText().toString().trim();
+        String father_name = FatherNameEditText.getText().toString().trim();
+        String mother_name = MotherNameEditText.getText().toString().trim();
+        String gender = GenderSpinner.getSelectedItem().toString().trim();
+        String blood_group = BloodGroupSpinner.getSelectedItem().toString().trim();
+        String birth_place = BPlaceEditText.getText().toString().trim();
+        String role = RoleSpinner.getSelectedItem().toString().trim();
+
+        // Format the birthdate
+        String formattedBirthDate = formatDate(birth_date);
+
+        List<String> siblingNames = new ArrayList<>();
+
+        // Increment sr for each sibling name entered
+        for (int i = 0; i < siblingFirstNameEditTexts.size(); i++) {
+            String sibling_first_name = siblingFirstNameEditTexts.get(i).getText().toString().trim();
+            String sibling_last_name = siblingLastNameEditTexts.get(i).getText().toString().trim();
+
+            // Ensure that both first and last names are not empty
+            if (!sibling_first_name.isEmpty() && !sibling_last_name.isEmpty()) {
+                sr++;
+                siblingNames.add(sibling_first_name + " " + sibling_last_name);
+            }
+        }
+
+        // Prepare data to store in Firestore
+        Map<String, Object> userData = new HashMap<>();
+//        userData.put("Name", name);
+        userData.put("sibling_count", sr);
+        userData.put("sibling_names", siblingNames);
+        userData.put("Role", role);
+        userData.put("Spouse Type", spouse);
+        userData.put("Spouse Name", SpouseEditText.getText().toString().trim());
+
+// Store data in Firestore with 'name' as the document ID
+        db.collection("users")
+                .document(name) // Use 'name' as the document ID
+                .set(userData) // Set the userData map as the document data
+                .addOnSuccessListener(aVoid -> {
+                    // Document successfully added
+                    Log.d("Firestore", "DocumentSnapshot added with ID: " + name);
+
+                    // Reset the sibling counter after submission
+                    sr = 0;
+                    runOnUiThread(this::showAlertDialog1);
+                })
+                .addOnFailureListener(e -> {
+                    runOnUiThread(() -> {
+                        showAlertDialogError("Failed to submit data to Firestore: " + e.getMessage());
+                    });
+                });
+
+
+        // URL encode the data to handle special characters
+        try {
+            String postData = "first_name=" + URLEncoder.encode(first_name, "UTF-8") +
+                    "&last_name=" + URLEncoder.encode(last_name, "UTF-8") +
+                    "&father_name=" + URLEncoder.encode(father_name, "UTF-8") +
+                    "&mother_name=" + URLEncoder.encode(mother_name, "UTF-8") +
+                    "&birth_date=" + URLEncoder.encode(formattedBirthDate, "UTF-8") +
+                    "&birth_place=" + URLEncoder.encode(birth_place, "UTF-8") +
+                    "&gender=" + URLEncoder.encode(gender, "UTF-8") +
+                    "&blood_group=" + URLEncoder.encode(blood_group, "UTF-8");
+
+            // Create a new thread for network operation
+            new Thread(() -> {
+                HttpURLConnection urlConnection = null;
+                try {
+                    // URL to your PHP script
+                    URL url = new URL("http://192.168.30.219/insert_person.php"); // Replace with your actual URL
+
+                    // Create a HttpURLConnection
+                    urlConnection = (HttpURLConnection) url.openConnection();
+                    urlConnection.setRequestMethod("POST");
+                    urlConnection.setDoOutput(true);
+                    urlConnection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+
+                    // Send the POST data
+                    urlConnection.getOutputStream().write(postData.getBytes(StandardCharsets.UTF_8));
+                    Log.d("AppData", "Sending data: " + postData);
+
+                    // Get the response code
+                    int responseCode = urlConnection.getResponseCode();
+                    if (responseCode == HttpURLConnection.HTTP_OK) {
+                        // Read the response (Optional)
+                        BufferedReader in = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+                        String inputLine;
+                        StringBuilder response = new StringBuilder();
+                        while ((inputLine = in.readLine()) != null) {
+                            response.append(inputLine);
+                        }
+                        in.close();
+
+                        // Handle response (Optional)
+                        runOnUiThread(this::showAlertDialog1);
+                        runOnUiThread(this::resetFields);
+                    } else {
+                        // Handle error
+                        runOnUiThread(() -> {
+                            showAlertDialogError("Failed to submit data. Please try again.");
+                        });
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    runOnUiThread(() -> {
+                        showAlertDialogError("An error occurred: " + e.getMessage());
+                    });
+                } finally {
+                    if (urlConnection != null) {
+                        urlConnection.disconnect();
+                    }
+                }
+            }).start();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            showAlertDialogError("Encoding error: " + e.getMessage());
+        }
+    }
+
+    @NonNull
+    private String formatDate(String dateStr) {
+        SimpleDateFormat inputFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+        SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        try {
+            Date date = inputFormat.parse(dateStr);
+            assert date != null;
+            return outputFormat.format(date);
+        } catch (ParseException e) {
+            e.printStackTrace();
+            return ""; // Return empty string if parsing fails
+        }
     }
 
     private void showAlertDialogError(String message) {
@@ -170,8 +411,23 @@ public class MainActivity extends AppCompatActivity {
             isValid = false;
         }
 
-        if (GenderSpinner.getSelectedItem() == null || GenderSpinner.getSelectedItem().toString().trim().isEmpty()) {
-            ((TextView) GenderSpinner.getSelectedView()).setError("Gender is required");
+        if (SiblingCheckbox.isChecked() && SiblingLayout1.getVisibility() == View.VISIBLE) {
+            if (SiblingSpinner.getSelectedItem() == null || SiblingSpinner.getSelectedItemPosition() == 0) {
+                Toast.makeText(MainActivity.this, "Please select a number", Toast.LENGTH_SHORT).show();
+                isValid = false;
+            } else {
+                for (int i = 0; i < siblingFirstNameEditTexts.size(); i++) {
+                    if (siblingFirstNameEditTexts.get(i).getText().toString().trim().isEmpty() ||
+                            siblingLastNameEditTexts.get(i).getText().toString().trim().isEmpty()) {
+                        siblingFirstNameEditTexts.get(i).setError("Sibling First and Last Names are required");
+                        isValid = false;
+                    }
+                }
+            }
+        }
+
+        if (GenderSpinner.getSelectedItem() == null || GenderSpinner.getSelectedItemPosition() == 0) {
+            Toast.makeText(MainActivity.this, "Please select a gender", Toast.LENGTH_SHORT).show();
             isValid = false;
         }
 
@@ -180,9 +436,25 @@ public class MainActivity extends AppCompatActivity {
             isValid = false;
         }
 
+        if (BPlaceEditText.getText().toString().trim().isEmpty()) {
+            BPlaceEditText.setError("Birth place is required");
+            isValid = false;
+        }
+
+        if (MarriageSpinner.getSelectedItem() == null || MarriageSpinner.getSelectedItemPosition() == 0) {
+            Toast.makeText(this, "Please select a status", Toast.LENGTH_SHORT).show();
+            isValid = false;
+        } else if (MarriageSpinner.getSelectedItem().toString().equals("Married")) {
+            if (SpouseEditText.getText().toString().trim().isEmpty()) {
+                SpouseEditText.setError("Spouse Name is required");
+                isValid = false;
+            }
+        }
         return isValid;
     }
 
+
+    @SuppressLint("SetTextI18n")
     private void updateSiblingFields(int numSiblings) {
         // Clear all existing views in the SiblingInfo layout
         SiblingInfo.removeAllViews();
@@ -278,5 +550,42 @@ public class MainActivity extends AppCompatActivity {
         // Create and show the AlertDialog
         AlertDialog dialog = builder.create();
         dialog.show();
+    }
+
+    private void resetFields() {
+        FirstNameEditText.setText("");
+        LastNameEditText.setText("");
+        FatherNameEditText.setText("");
+        MotherNameEditText.setText("");
+        BdateEditText.setText("");
+        BPlaceEditText.setText("");
+        SpouseEditText.setText("");
+        // Reset CheckBoxes
+        SiblingCheckbox.setChecked(false);
+        // Reset Spinners
+        if (GenderSpinner != null || GenderSpinner.getSelectedItemPosition() != 0) {
+            GenderSpinner.setSelection(0);
+        }
+        if (SiblingSpinner.getSelectedItem() != null || SiblingSpinner.getSelectedItemPosition() != 0) {
+            SiblingSpinner.setSelection(0);
+        }
+        if (BloodGroupSpinner.getSelectedItem() != null || BloodGroupSpinner.getSelectedItemPosition() != 0) {
+            BloodGroupSpinner.setSelection(0);
+        }
+        if (MarriageSpinner.getSelectedItem() != null || MarriageSpinner.getSelectedItemPosition() != 0) {
+            MarriageSpinner.setSelection(0);
+        }
+        if(RoleSpinner.getSelectedItem() != null || RoleSpinner.getSelectedItemPosition() != 0) {
+            RoleSpinner.setSelection(0);
+        }
+
+        // Hide sibling and marriage layouts
+        SiblingLayout1.setVisibility(View.GONE);
+        SiblingInfo.setVisibility(View.GONE);
+        MarriageInfo.setVisibility(View.GONE);
+
+        // Clear sibling information
+        siblingFirstNameEditTexts.clear();
+        siblingLastNameEditTexts.clear();
     }
 }

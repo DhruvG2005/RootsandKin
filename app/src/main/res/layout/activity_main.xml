@@ -10,14 +10,16 @@
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="wrap_content">
 
-        <Button
+        <ImageButton
             android:id="@+id/Back"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:backgroundTint="#000000"
-            android:text="Back" />
+            android:src="@drawable/arrow_back"
+            android:backgroundTint="#F5EADD"
+            android:contentDescription="back"
+            tools:targetApi="p" />
 
         <TextView
             android:id="@+id/Title"
@@ -239,7 +241,7 @@
             <TextView
                 android:layout_width="194dp"
                 android:layout_height="60dp"
-                android:text="Select Your Gender"
+                android:text="Select Your Gender:"
                 android:textSize="20sp" />
 
             <Space
@@ -261,11 +263,74 @@
             android:layout_below="@+id/GenderLayout"/>
 
         <LinearLayout
+            android:id="@+id/MarriageLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_below="@+id/Space7">
+
+
+            <LinearLayout
+                android:id="@+id/MarriageLayout1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Relationship Status:"
+                    android:textSize="20sp"/>
+
+                <Spinner
+                    android:id="@+id/MarriageSpinner"
+                    android:layout_width="match_parent"
+                    android:layout_marginStart="50dp"
+                    android:layout_height="60dp" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/MarriageInfo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/SpouseNameTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:text="Enter Name:"
+                    android:textSize="20sp" />
+                <Space
+                    android:layout_width="10sp"
+                    android:layout_height="0dp"
+                    android:layout_marginTop="54dp" />
+                <EditText
+                    android:id="@+id/SpouseNameEditText"
+                    android:layout_width="256dp"
+                    android:layout_height="48dp"
+                    android:hint="Spouse Name" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <Space
+            android:id="@+id/Space8"
+            android:layout_width="match_parent"
+            android:layout_height="40sp"
+            android:layout_below="@+id/MarriageLayout"/>
+
+        <LinearLayout
             android:id="@+id/BloodGroupLayout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_below="@+id/Space7">
+            android:layout_below="@+id/Space8">
 
             <TextView
                 android:layout_width="194dp"
@@ -285,7 +350,7 @@
         </LinearLayout>
 
         <Space
-            android:id="@+id/Space8"
+            android:id="@+id/Space9"
             android:layout_width="match_parent"
             android:layout_height="40sp"
             android:layout_below="@+id/BloodGroupLayout"/>
@@ -295,7 +360,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:layout_below="@+id/Space8">
+            android:layout_below="@+id/Space9">
 
             <TextView
                 android:layout_width="194dp"
@@ -311,7 +376,70 @@
                 android:id="@+id/BdateEditText"
                 android:layout_width="256dp"
                 android:layout_height="48dp"
-                android:hint="Birth Date (dd/MM/yyyy)" />
+                android:hint="Birth Date (dd/MM/yyyy)"
+                android:focusable="false"
+                android:focusableInTouchMode="false"/>
+
+        </LinearLayout>
+
+        <Space
+            android:id="@+id/Space10"
+            android:layout_width="match_parent"
+            android:layout_height="40sp"
+            android:layout_below="@+id/BdateLayout"/>
+
+        <LinearLayout
+            android:id="@+id/BPlaceLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_below="@+id/Space10">
+
+            <TextView
+                android:layout_width="194dp"
+                android:layout_height="60dp"
+                android:text="Enter Your Birth Place:"
+                android:textSize="20sp" />
+            <Space
+                android:layout_width="10sp"
+                android:layout_height="0dp"
+                android:layout_marginTop="10dp" />
+
+            <EditText
+                android:id="@+id/BPlaceEditText"
+                android:layout_width="256dp"
+                android:layout_height="48dp"
+                android:hint="Birth Place" />
+
+        </LinearLayout>
+
+        <Space
+            android:id="@+id/Space11"
+            android:layout_width="match_parent"
+            android:layout_height="40sp"
+            android:layout_below="@+id/BPlaceLayout"/>
+
+        <LinearLayout
+            android:id="@+id/RoleLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_below="@+id/Space11">
+
+            <TextView
+                android:layout_width="194dp"
+                android:layout_height="120dp"
+                android:text="Enter Your Role in your family:"
+                android:textSize="20sp" />
+            <Space
+                android:layout_width="10sp"
+                android:layout_height="0dp"
+                android:layout_marginTop="10dp" />
+
+            <Spinner
+                android:id="@+id/RoleSpinner"
+                android:layout_width="match_parent"
+                android:layout_height="60dp" />
 
         </LinearLayout>
 
@@ -319,11 +447,21 @@
             android:id="@+id/Submit"
             android:layout_width="150dp"
             android:layout_height="wrap_content"
-            android:layout_below="@id/BdateLayout"
+            android:layout_below="@id/RoleLayout"
             android:layout_centerHorizontal="true"
-            android:layout_marginTop="100dp"
+            android:layout_marginTop="50dp"
             android:backgroundTint="#0000FF"
             android:text="Submit" />
+
+        <Button
+            android:id="@+id/FamHis"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/Submit"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="50dp"
+            android:backgroundTint="#0000FF"
+            android:text="View Family History" />
 
     </RelativeLayout>
 </ScrollView>
