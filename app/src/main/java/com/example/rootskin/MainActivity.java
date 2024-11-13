@@ -12,6 +12,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.EditText;
+import android.content.SharedPreferences;
 import android.widget.TextView;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -31,6 +32,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -56,13 +58,13 @@ public class MainActivity extends AppCompatActivity {
     private List<EditText> siblingLastNameEditTexts = new ArrayList<>();
     private int sr = 0;//sr=sibling relationship
     private FirebaseFirestore db;
-    private String name, spouse;
+    private String name, spouse, firstName, lastName, first_name, last_name, firstname, lastname;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        clearSharedPreferences();
         backButton = findViewById(R.id.Back);
         submitButton = findViewById(R.id.Submit);
         GenderSpinner = findViewById(R.id.GenderSpinner);
@@ -86,7 +88,6 @@ public class MainActivity extends AppCompatActivity {
         // Initialize Firebase Firestore
         db = FirebaseFirestore.getInstance();
 
-
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this, R.array.gender_array, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         GenderSpinner.setAdapter(adapter);
@@ -103,7 +104,7 @@ public class MainActivity extends AppCompatActivity {
         adapter3.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         MarriageSpinner.setAdapter(adapter3);
 
-        ArrayAdapter<CharSequence> adapter4 = ArrayAdapter.createFromResource(this,R.array.role_array, android.R.layout.simple_spinner_item);
+        ArrayAdapter<CharSequence> adapter4 = ArrayAdapter.createFromResource(this, R.array.role_array, android.R.layout.simple_spinner_item);
         adapter4.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         RoleSpinner.setAdapter(adapter4);
 
@@ -203,9 +204,10 @@ public class MainActivity extends AppCompatActivity {
         });
 
         FamHis.setOnClickListener(v -> {
-            Intent intent = new Intent(this, FamilyTreeActivity.class);
-            startActivity(intent);
-            finish();
+            if(validateFieldsName())
+                showFamilyTree();
+            else
+                showAlertDialogError("Please fill in the Required Fields!!");
         });
     }
 
@@ -231,15 +233,9 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void sendDataToServer() {
-
-        String first_name = FirstNameEditText.getText().toString().trim();
-        String last_name = LastNameEditText.getText().toString().trim();
-        SharedPreferences prefs = getSharedPreferences("userPrefs", MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-        editor.putString("firstName", first_name);
-        editor.putString("lastName", last_name);
-        editor.apply();
-        name = first_name + last_name;
+        first_name = FirstNameEditText.getText().toString().trim();
+        last_name = LastNameEditText.getText().toString().trim();
+//        name = first_name+last_name;
         String birth_date = BdateEditText.getText().toString().trim();
         String father_name = FatherNameEditText.getText().toString().trim();
         String mother_name = MotherNameEditText.getText().toString().trim();
@@ -252,29 +248,40 @@ public class MainActivity extends AppCompatActivity {
         String formattedBirthDate = formatDate(birth_date);
 
         List<String> siblingNames = new ArrayList<>();
+        int siblingCount = 0; // Default value for no siblings
 
-        // Increment sr for each sibling name entered
-        for (int i = 0; i < siblingFirstNameEditTexts.size(); i++) {
-            String sibling_first_name = siblingFirstNameEditTexts.get(i).getText().toString().trim();
-            String sibling_last_name = siblingLastNameEditTexts.get(i).getText().toString().trim();
+        if(SiblingCheckbox.isChecked()) {
+            // Increment sr for each sibling name entered
+            for (int i = 0; i < siblingFirstNameEditTexts.size(); i++) {
+                String sibling_first_name = siblingFirstNameEditTexts.get(i).getText().toString().trim();
+                String sibling_last_name = siblingLastNameEditTexts.get(i).getText().toString().trim();
 
-            // Ensure that both first and last names are not empty
-            if (!sibling_first_name.isEmpty() && !sibling_last_name.isEmpty()) {
-                sr++;
-                siblingNames.add(sibling_first_name + " " + sibling_last_name);
+                // Ensure that both first and last names are not empty
+                if (!sibling_first_name.isEmpty() && !sibling_last_name.isEmpty()) {
+                    siblingCount++;
+                    siblingNames.add(sibling_first_name + " " + sibling_last_name);
+                }
             }
+        }
+
+        // If the sibling checkbox is unchecked, reset siblingNames to empty list and set siblingCount to 0
+        if (!SiblingCheckbox.isChecked()) {
+            siblingNames.clear();
+            siblingCount = 0;
         }
 
         // Prepare data to store in Firestore
         Map<String, Object> userData = new HashMap<>();
-//        userData.put("Name", name);
-        userData.put("sibling_count", sr);
+        userData.put("sibling_count", siblingCount);
         userData.put("sibling_names", siblingNames);
         userData.put("Role", role);
         userData.put("Spouse Type", spouse);
         userData.put("Spouse Name", SpouseEditText.getText().toString().trim());
 
-// Store data in Firestore with 'name' as the document ID
+//        // Generate a valid document ID, ensure it's a unique and valid identifier.
+//        String documentId = generateDocumentId(first_name.trim(), last_name.trim());
+
+        // Store data in Firestore with 'name' as the document ID
         db.collection("users")
                 .document(name) // Use 'name' as the document ID
                 .set(userData) // Set the userData map as the document data
@@ -292,7 +299,6 @@ public class MainActivity extends AppCompatActivity {
                     });
                 });
 
-
         // URL encode the data to handle special characters
         try {
             String postData = "first_name=" + URLEncoder.encode(first_name, "UTF-8") +
@@ -309,7 +315,7 @@ public class MainActivity extends AppCompatActivity {
                 HttpURLConnection urlConnection = null;
                 try {
                     // URL to your PHP script
-                    URL url = new URL("http://192.168.30.219/insert_person.php"); // Replace with your actual URL
+                    URL url = new URL("http://192.168.155.37/insert_person.php"); // Replace with your actual URL
 
                     // Create a HttpURLConnection
                     urlConnection = (HttpURLConnection) url.openConnection();
@@ -359,6 +365,14 @@ public class MainActivity extends AppCompatActivity {
             showAlertDialogError("Encoding error: " + e.getMessage());
         }
     }
+    private void showFamilyTree() {
+        firstname = FirstNameEditText.getText().toString().trim();
+        lastname = LastNameEditText.getText().toString().trim();
+        Intent intent = new Intent(this, FamilyTreeActivity.class);
+        intent.putExtra("firstName", firstname);
+        intent.putExtra("lastName", lastname);
+        startActivity(intent);
+    }
 
     @NonNull
     private String formatDate(String dateStr) {
@@ -386,7 +400,21 @@ public class MainActivity extends AppCompatActivity {
         AlertDialog dialog = builder.create();
         dialog.show();
     }
+    private boolean validateFieldsName() {
+        // Check if required fields are filled
+        boolean isValid = true;
 
+        if (FirstNameEditText.getText().toString().trim().isEmpty()) {
+            FirstNameEditText.setError("First name is required");
+            isValid = false;
+        }
+
+        if (LastNameEditText.getText().toString().trim().isEmpty()) {
+            LastNameEditText.setError("Last name is required");
+            isValid = false;
+        }
+        return isValid;
+    }
     private boolean validateFields() {
         // Check if required fields are filled
         boolean isValid = true;
@@ -587,5 +615,12 @@ public class MainActivity extends AppCompatActivity {
         // Clear sibling information
         siblingFirstNameEditTexts.clear();
         siblingLastNameEditTexts.clear();
+    }
+
+    private void clearSharedPreferences() {
+        SharedPreferences sharedPreferences = getSharedPreferences("userPrefs", MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.clear(); // This clears all the data in SharedPreferences
+        editor.apply(); // Apply the changes
     }
 }

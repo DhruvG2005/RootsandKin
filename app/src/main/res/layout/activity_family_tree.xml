@@ -2,41 +2,71 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:padding="16dp">
 
-    <ImageButton
-        android:id="@+id/Back1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="0dp"
-        android:backgroundTint="#FFFFFF"
-        android:contentDescription="back"
-        android:src="@drawable/arrow_back"
-        tools:targetApi="p" />
-
-    <LinearLayout
+    <!-- Vertical ScrollView for scrolling the entire table -->
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center">
+        android:layout_height="match_parent">
 
-        <TextView
-            android:id="@+id/tvNoFamilyHistory"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="No family history found due to lack of information!"
-            android:textSize="18sp"
-            android:gravity="center"
-            android:layout_marginVertical="300dp"
-            android:textColor="@android:color/black"
-            android:visibility="gone" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerView"
+        <!-- Horizontal ScrollView to allow horizontal scrolling of the TableLayout -->
+        <HorizontalScrollView
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginTop="16dp" />
+            android:layout_height="wrap_content">
 
+            <!-- TableLayout for displaying the family tree -->
+            <TableLayout
+                android:id="@+id/tableLayout"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:stretchColumns="0"
+            android:shrinkColumns="4"
+            android:orientation="vertical"
+            android:paddingBottom="16dp">
+
+            <!-- Header row -->
+            <TableRow>
+                <!-- Family Members column -->
+                <TextView
+                    android:layout_width="120dp"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:padding="8dp"
+                    android:text="Family Members"
+                    android:textStyle="bold"
+                    android:layout_marginEnd="32dp" />
+
+                <!-- Parents column -->
+                <TextView
+                    android:layout_width="120dp"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:padding="8dp"
+                android:text="Parents"
+                android:textStyle="bold"
+                android:layout_marginEnd="32dp" />
+
+                <!-- GrandParents column -->
+                <TextView
+                    android:layout_width="150dp"
+                android:layout_height="wrap_content"
+                android:text="GrandParents"
+                android:padding="8dp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:layout_marginEnd="50dp" />
+
+                <!-- Relationships column -->
+                <TextView
+                    android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Relationships"
+                android:padding="8dp"
+                android:textStyle="bold"
+                android:gravity="center" />
+            </TableRow>
+        </TableLayout>
+    </HorizontalScrollView>
+</ScrollView>
     </LinearLayout>
-
-</LinearLayout>

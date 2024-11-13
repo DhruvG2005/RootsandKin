@@ -1,22 +1,42 @@
-<?xml version="1.0" encoding="utf-8"?>
+<!-- res/layout/item_family.xml -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:background="?android:attr/selectableItemBackground">
 
+    <!-- First and Last Name -->
     <TextView
-        android:id="@+id/familyNameTextView"
+        android:id="@+id/first_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Family Name"
-        android:textSize="18sp" />
+        android:text="First Name"
+        android:textSize="16sp"
+        android:textStyle="bold" />
 
     <TextView
-        android:id="@+id/roleTextView"
+        android:id="@+id/last_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Last Name"
+        android:textSize="14sp" />
+
+    <!-- Role -->
+    <TextView
+        android:id="@+id/role"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Role"
         android:textSize="14sp"
-        android:layout_marginTop="4dp" />
+        android:textStyle="italic" />
+
+    <!-- Relationship -->
+    <TextView
+        android:id="@+id/relationship"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Relationship"
+        android:textSize="12sp"
+        android:textColor="@android:color/darker_gray" />
 </LinearLayout>

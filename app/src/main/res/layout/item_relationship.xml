@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Person 1 TextView -->
+    <TextView
+        android:id="@+id/person_1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Person 1"
+        android:textSize="16sp" />
+
+    <!-- Person 2 TextView -->
+    <TextView
+        android:id="@+id/person_2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Person 2"
+        android:textSize="16sp" />
+
+    <!-- Relationship Type TextView -->
+    <TextView
+        android:id="@+id/relationship_type"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Relationship Type"
+        android:textSize="16sp" />
+
+    <!-- Details TextView -->
+    <TextView
+        android:id="@+id/details"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Details"
+        android:textSize="14sp" />
+
+</LinearLayout>
