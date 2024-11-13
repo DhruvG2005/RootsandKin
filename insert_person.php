@@ -5,7 +5,7 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
 // Configuration for the XAMPP MySQL server (port 3307)
-$servername1 = "192.168.0.103";
+$hosts = ['192.168.155.37','192.168.0.104','192.168.167.219','192.168.30.219','192.168.0.103','192.168.255.219','192.168.0.102','192.168.178.42'];
 $username1 = "root";  // Your MySQL username for XAMPP
 $password1 = "dHRUV20@";  // Your MySQL password for XAMPP
 $dbname1 = "genealogy";  // Your database name for XAMPP
@@ -18,17 +18,25 @@ $port1 = '3306';  // Port for XAMPP MySQL server
 // $dbname2 = "genealogy";  // Your database name for local MySQL server
 // $port2 = '3306';  // Port for local MySQL server
 
-// Create connections
-$conn1 = new mysqli($servername1, $username1, $password1, $dbname1, $port1);
-// $conn2 = new mysqli($servername2, $username2, $password2, $dbname2, $port2);
+function connectToDatabase($hosts, $username1, $password1, $dbname1) {
+    foreach ($hosts as $host) {
+        // Try to establish a connection
+        $conn = new mysqli($host, $username1, $password1, $dbname1);
+        
+        if ($conn->connect_error) {
+            // Log connection failure and try the next IP address
+            error_log("Connection failed to $host: " . $conn->connect_error);
+        } else {
+            // Successful connection
+            return $conn;
+        }
+    }
 
-// Check connections
-if ($conn1->connect_error) {
-    die("Connection to XAMPP MySQL server failed: " . $conn1->connect_error);
+    // If all hosts fail
+    die("Connection failed to all database hosts.");
 }
-// if ($conn2->connect_error) {
-//     die("Connection to local MySQL server failed: " . $conn2->connect_error);
-// }
+// Create connection to the first available host
+$conn = connectToDatabase($hosts, $user, $password, $dbname);
 
 // Get the data from the POST request
 $first_name = $_POST['first_name'] ?? '';
