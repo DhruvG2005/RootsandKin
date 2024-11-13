@@ -1,121 +1,270 @@
 <?php
-header('Content-Type: application/json');
+// Database connection details
+$hosts = ['192.168.155.37','192.168.0.104','192.168.167.219','192.168.30.219','192.168.0.103','192.168.255.219','192.168.0.102','192.168.178.42']; // Database host
+$user = 'root'; // Database username
+$password = 'dHRUV20@'; // Database password
+$dbname = 'genealogy'; // Database name
 
-// Database configuration
-$servername = "192.168.0.103";
-$username = "root"; // Your database username
-$password = "dHRUV20@"; // Your database password
-$dbname = "genealogy"; // Your database name
+function connectToDatabase($hosts, $user, $password, $dbname) {
+    foreach ($hosts as $host) {
+        // Try to establish a connection
+        $conn = new mysqli($host, $user, $password, $dbname);
+        
+        if ($conn->connect_error) {
+            // Log connection failure and try the next IP address
+            error_log("Connection failed to $host: " . $conn->connect_error);
+        } else {
+            // Successful connection
+            return $conn;
+        }
+    }
 
-// Create connection
-$conn = new mysqli($servername, $username, $password, $dbname);
+    // If all hosts fail
+    die("Connection failed to all database hosts.");
+}
+// Create connection to the first available host
+$conn = connectToDatabase($hosts, $user, $password, $dbname);
 
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+// Helper function to split a full name into first and last name
+function splitName($name) {
+    $name_parts = explode(" ", $name);
+    return count($name_parts) > 1 ? ['first_name' => $name_parts[0], 'last_name' => $name_parts[1]] : ['first_name' => $name, 'last_name' => ''];
 }
 
-// Get first_name and last_name from the request
-$first_name = $_GET['first_name'] ?? null;
-$last_name = $_GET['last_name'] ?? null;
+// Helper function to fetch family members (siblings, parents, spouses)
+function getFamilyMembers($conn, $last_name) {
+    // Fetch family members based on last name (Father, Mother, Son, Daughter, Spouse roles)
+    $sql = "SELECT p.first_name, p.last_name, p.gender, fm.role, p.person_id 
+            FROM family_members fm
+            JOIN persons p ON fm.person_id = p.person_id
+            WHERE fm.role IN ('Father', 'Mother', 'Son', 'Daughter', 'Spouse') 
+            AND p.last_name = ?";
+    
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("s", $last_name);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $familyMembers = [];
+    while ($row = $result->fetch_assoc()) {
+        $familyMembers[] = [
+            'first_name' => $row['first_name'],
+            'last_name' => $row['last_name'],
+            'gender' => $row['gender'],
+            'role' => $row['role'],
+            'person_id' => $row['person_id'] // Add person_id to use later in relationships
+        ];
+    }
 
-if ($first_name && $last_name) {
-    // Query to get the person_id from the persons table
-    $personQuery = "
-        SELECT person_id 
-        FROM persons 
-        WHERE first_name = ? AND last_name = ?
-    ";
-    $stmt = $conn->prepare($personQuery);
+    return $familyMembers;
+}
+
+// Helper function to fetch parents (father and mother)
+function getParents($conn, $first_name, $last_name) {
+    $sql = "SELECT father_name, mother_name FROM persons WHERE first_name = ? AND last_name = ?";
+    $stmt = $conn->prepare($sql);
     $stmt->bind_param("ss", $first_name, $last_name);
     $stmt->execute();
-    $personResult = $stmt->get_result();
-
-    if ($personResult->num_rows > 0) {
-        $personRow = $personResult->fetch_assoc();
-        $person_id = $personRow['person_id'];
-
-        // Now that we have the person_id, fetch the family details
-        $familyQuery = "
-            SELECT f.family_id, f.family_name, fm.role
-            FROM family_members fm
-            JOIN families f ON fm.family_id = f.family_id
-            WHERE fm.person_id = ?
-        ";
-        $stmt = $conn->prepare($familyQuery);
-        $stmt->bind_param("i", $person_id);
-        $stmt->execute();
-        $familyResult = $stmt->get_result();
-
-        $familyTree = [];
-        while ($family = $familyResult->fetch_assoc()) {
-            $familyId = $family['family_id'];
-
-            // Query to get all family members of the family
-            $membersQuery = "
-                SELECT p.person_id, p.first_name, p.last_name, p.gender, fm.role
-                FROM family_members fm
-                JOIN persons p ON fm.person_id = p.person_id
-                WHERE fm.family_id = ?
-            ";
-            $stmt2 = $conn->prepare($membersQuery);
-            $stmt2->bind_param("i", $familyId);
-            $stmt2->execute();
-            $membersResult = $stmt2->get_result();
-
-            $members = [];
-            while ($member = $membersResult->fetch_assoc()) {
-                // For each member, fetch their relationships
-                $relationshipsQuery = "
-                    SELECT r.relationship_type, p2.person_id, p2.first_name, p2.last_name, p2.gender
-                    FROM relationships r
-                    JOIN persons p1 ON r.person_id_1 = p1.person_id
-                    JOIN persons p2 ON r.person_id_2 = p2.person_id
-                    WHERE r.person_id_1 = ?
-                ";
-                $stmt3 = $conn->prepare($relationshipsQuery);
-                $stmt3->bind_param("i", $member['person_id']);
-                $stmt3->execute();
-                $relationshipsResult = $stmt3->get_result();
-
-                $relationships = [];
-                while ($relationship = $relationshipsResult->fetch_assoc()) {
-                    $relationships[] = [
-                        "relationship_type" => $relationship['relationship_type'],
-                        "related_person" => [
-                            "person_id" => $relationship['person_id'],
-                            "first_name" => $relationship['first_name'],
-                            "last_name" => $relationship['last_name'],
-                            "gender" => $relationship['gender'],
-                        ]
-                    ];
-                }
-
-                $members[] = [
-                    "person_id" => $member['person_id'],
-                    "first_name" => $member['first_name'],
-                    "last_name" => $member['last_name'],
-                    "gender" => $member['gender'],
-                    "role" => $member['role'],
-                    "relationships" => $relationships
-                ];
-            }
-
-            $familyTree[] = [
-                "family_id" => $family['family_id'],
-                "family_name" => $family['family_name'],
-                "role" => $family['role'],
-                "members" => $members
-            ];
-        }
-
-        echo json_encode($familyTree);
-    } else {
-        echo json_encode(["error" => "Person not found"]);
-    }
-} else {
-    echo json_encode(["error" => "First name and last name not provided."]);
+    $result = $stmt->get_result();
+    return $result->fetch_assoc();
 }
 
+// Recursive function to fetch grandparents by checking father_name and mother_name iteratively
+function getGrandparents($conn, $father_name, $mother_name) {
+    $grandparents = [];
+
+    // Fetch paternal grandparents (father's side)
+    if ($father_name) {
+        $father_parts = splitName($father_name);
+        $father_first_name = $father_parts['first_name'];
+        $father_last_name = $father_parts['last_name'];
+
+        $sql = "SELECT father_name, mother_name FROM persons WHERE first_name = ? AND last_name = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("ss", $father_first_name, $father_last_name);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($row = $result->fetch_assoc()) {
+            if ($row['father_name']) {
+                $father_grandparents = splitName($row['father_name']);
+                $grandparents[] = ['first_name' => $father_grandparents['first_name'], 'last_name' => $father_grandparents['last_name'], 'relationship' => 'Paternal Grandfather'];
+            }
+            if ($row['mother_name']) {
+                $mother_grandparents = splitName($row['mother_name']);
+                $grandparents[] = ['first_name' => $mother_grandparents['first_name'], 'last_name' => $mother_grandparents['last_name'], 'relationship' => 'Paternal Grandmother'];
+            }
+        }
+    }
+
+    // Fetch maternal grandparents (mother's side)
+    if ($mother_name) {
+        $mother_parts = splitName($mother_name);
+        $mother_first_name = $mother_parts['first_name'];
+        $mother_last_name = $mother_parts['last_name'];
+
+        $sql = "SELECT father_name, mother_name FROM persons WHERE first_name = ? AND last_name = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param("ss", $mother_first_name, $mother_last_name);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if ($row = $result->fetch_assoc()) {
+            if ($row['father_name']) {
+                $father_grandparents = splitName($row['father_name']);
+                $grandparents[] = ['first_name' => $father_grandparents['first_name'], 'last_name' => $father_grandparents['last_name'], 'relationship' => 'Maternal Grandfather'];
+            }
+            if ($row['mother_name']) {
+                $mother_grandparents = splitName($row['mother_name']);
+                $grandparents[] = ['first_name' => $mother_grandparents['first_name'], 'last_name' => $mother_grandparents['last_name'], 'relationship' => 'Maternal Grandmother'];
+            }
+        }
+    }
+
+    return $grandparents;
+}
+
+// Fetch relationship details from the relationships table
+function getRelationshipDetails($conn, $person_id, $relative_id) {
+    $sql = "SELECT relationship_type, other_details 
+            FROM relationships 
+            WHERE (person_id_1 = ? AND person_id_2 = ?) 
+            OR (person_id_1 = ? AND person_id_2 = ?)";
+    
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("iiii", $person_id, $relative_id, $relative_id, $person_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $relationships = [];
+    
+    while ($row = $result->fetch_assoc()) {
+        $relationships[] = [
+            'relationship_type' => $row['relationship_type'],
+            'other_details' => $row['other_details']
+        ];
+    }
+    
+    return $relationships;
+}
+
+// Get the first name and last name from the GET request
+$first_name = $_GET['first_name'];
+$last_name = $_GET['last_name'];
+
+// Step 1: Fetch person_id from the persons table based on first_name and last_name
+$sql = "SELECT person_id, father_name, mother_name FROM persons WHERE first_name = ? AND last_name = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("ss", $first_name, $last_name);
+$stmt->execute();
+$result = $stmt->get_result();
+$row = $result->fetch_assoc();
+
+if (!$row) {
+    echo json_encode(["error" => "Person not found"]);
+    exit();
+}
+
+$person_id = $row['person_id'];
+$father_name = $row['father_name'];
+$mother_name = $row['mother_name'];
+
+// Step 2: Fetch family members (siblings, parents, spouses)
+$familyMembers = getFamilyMembers($conn, $last_name);
+
+// Step 3: Fetch parents (father and mother) for the given person
+$parents = [];
+if ($father_name) {
+    // Split father's name into first and last name
+    $father_parts = splitName($father_name);
+    $father_first_name = $father_parts['first_name'];
+    $father_last_name = $father_parts['last_name'];
+
+    // Fetch father details
+    $sql = "SELECT first_name, last_name FROM persons WHERE first_name = ? AND last_name = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ss", $father_first_name, $father_last_name);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($row = $result->fetch_assoc()) {
+        $parents[] = [
+            'first_name' => $row['first_name'],
+            'last_name' => $row['last_name'],
+            'relationship' => 'Father'
+        ];
+    }
+}
+
+if ($mother_name) {
+    // Split mother's name into first and last name
+    $mother_parts = splitName($mother_name);
+    $mother_first_name = $mother_parts['first_name'];
+    $mother_last_name = $mother_parts['last_name'];
+
+    // Fetch mother details
+    $sql = "SELECT first_name, last_name FROM persons WHERE first_name = ? AND last_name = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ss", $mother_first_name, $mother_last_name);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($row = $result->fetch_assoc()) {
+        $parents[] = [
+            'first_name' => $row['first_name'],
+            'last_name' => $row['last_name'],
+            'relationship' => 'Mother'
+        ];
+    }
+}
+
+// Step 4: Fetch grandparents (paternal and maternal)
+$grandparents = getGrandparents($conn, $father_name, $mother_name);
+
+// Step 5: Add relationships (siblings, parents, spouses) to the response
+$relationships = [];
+$familyMemberCount = count($familyMembers);
+
+// Loop through all family members and check all combinations
+for ($i = 0; $i < $familyMemberCount; $i++) {
+    $familyMember = $familyMembers[$i];
+    $relative_first_name = $familyMember['first_name'];
+    $relative_last_name = $familyMember['last_name'];
+    $relative_id = $familyMember['person_id'];
+
+    // Fetch relationship details
+    $relationshipDetails = getRelationshipDetails($conn, $person_id, $relative_id);
+    
+    // Add relationship to the list
+    foreach ($relationshipDetails as $detail) {
+        $relationships[] = [
+            'person_1' => $first_name . ' ' . $last_name,
+            'person_2' => $relative_first_name . ' ' . $relative_last_name,
+            'relationship_type' => $detail['relationship_type'],
+            'details' => $detail['other_details']
+        ];
+    }
+}
+
+// Final response construction
+$response = [];
+$response['person'] = [
+    'first_name' => $first_name,
+    'last_name' => $last_name
+];
+
+// Family Members
+$response['family_members'] = $familyMembers;
+
+// Parents
+$response['parents'] = $parents;
+
+// Grandparents
+$response['grandparents'] = $grandparents;
+
+// Relationships
+$response['relationships'] = $relationships;
+
+echo json_encode($response);
+
+// Close the connection
 $conn->close();
 ?>
